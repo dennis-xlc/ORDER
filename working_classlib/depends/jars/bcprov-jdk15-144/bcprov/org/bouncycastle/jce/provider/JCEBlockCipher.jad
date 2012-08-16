@@ -1,0 +1,1008 @@
+// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.geocities.com/kpdus/jad.html
+// Decompiler options: packimports(3) 
+
+package org.bouncycastle.jce.provider;
+
+import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.*;
+import javax.crypto.spec.*;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.engines.*;
+import org.bouncycastle.crypto.modes.*;
+import org.bouncycastle.crypto.paddings.*;
+import org.bouncycastle.crypto.params.*;
+import org.bouncycastle.jce.spec.GOST28147ParameterSpec;
+import org.bouncycastle.util.Strings;
+
+// Referenced classes of package org.bouncycastle.jce.provider:
+//            WrapCipherSpi, JCEPBEKey, PBE
+
+public class JCEBlockCipher extends WrapCipherSpi
+    implements PBE
+{
+    private static class AEADGenericBlockCipher
+        implements GenericBlockCipher
+    {
+
+        public void init(boolean flag, CipherParameters cipherparameters)
+            throws IllegalArgumentException
+        {
+            cipher.init(flag, cipherparameters);
+        }
+
+        public String getAlgorithmName()
+        {
+            return cipher.getUnderlyingCipher().getAlgorithmName();
+        }
+
+        public boolean wrapOnNoPadding()
+        {
+            return false;
+        }
+
+        public BlockCipher getUnderlyingCipher()
+        {
+            return cipher.getUnderlyingCipher();
+        }
+
+        public int getOutputSize(int i)
+        {
+            return cipher.getOutputSize(i);
+        }
+
+        public int getUpdateOutputSize(int i)
+        {
+            return cipher.getUpdateOutputSize(i);
+        }
+
+        public int processByte(byte byte0, byte abyte0[], int i)
+            throws DataLengthException
+        {
+            return cipher.processByte(byte0, abyte0, i);
+        }
+
+        public int processBytes(byte abyte0[], int i, int j, byte abyte1[], int k)
+            throws DataLengthException
+        {
+            return cipher.processBytes(abyte0, i, j, abyte1, k);
+        }
+
+        public int doFinal(byte abyte0[], int i)
+            throws IllegalStateException, InvalidCipherTextException
+        {
+            return cipher.doFinal(abyte0, i);
+        }
+
+        private AEADBlockCipher cipher;
+
+        AEADGenericBlockCipher(AEADBlockCipher aeadblockcipher)
+        {
+            cipher = aeadblockcipher;
+        }
+    }
+
+    public static class AES extends JCEBlockCipher
+    {
+
+        public AES()
+        {
+            super(new AESFastEngine());
+        }
+    }
+
+    public static class AESCBC extends JCEBlockCipher
+    {
+
+        public AESCBC()
+        {
+            super(new CBCBlockCipher(new AESFastEngine()), 128);
+        }
+    }
+
+    public static class AESCFB extends JCEBlockCipher
+    {
+
+        public AESCFB()
+        {
+            super(new CFBBlockCipher(new AESFastEngine(), 128), 128);
+        }
+    }
+
+    public static class AESOFB extends JCEBlockCipher
+    {
+
+        public AESOFB()
+        {
+            super(new OFBBlockCipher(new AESFastEngine(), 128), 128);
+        }
+    }
+
+    public static class Blowfish extends JCEBlockCipher
+    {
+
+        public Blowfish()
+        {
+            super(new BlowfishEngine());
+        }
+    }
+
+    public static class BlowfishCBC extends JCEBlockCipher
+    {
+
+        public BlowfishCBC()
+        {
+            super(new CBCBlockCipher(new BlowfishEngine()), 64);
+        }
+    }
+
+    private static class BufferedGenericBlockCipher
+        implements GenericBlockCipher
+    {
+
+        public void init(boolean flag, CipherParameters cipherparameters)
+            throws IllegalArgumentException
+        {
+            cipher.init(flag, cipherparameters);
+        }
+
+        public boolean wrapOnNoPadding()
+        {
+            return !(cipher instanceof CTSBlockCipher);
+        }
+
+        public String getAlgorithmName()
+        {
+            return cipher.getUnderlyingCipher().getAlgorithmName();
+        }
+
+        public BlockCipher getUnderlyingCipher()
+        {
+            return cipher.getUnderlyingCipher();
+        }
+
+        public int getOutputSize(int i)
+        {
+            return cipher.getOutputSize(i);
+        }
+
+        public int getUpdateOutputSize(int i)
+        {
+            return cipher.getUpdateOutputSize(i);
+        }
+
+        public int processByte(byte byte0, byte abyte0[], int i)
+            throws DataLengthException
+        {
+            return cipher.processByte(byte0, abyte0, i);
+        }
+
+        public int processBytes(byte abyte0[], int i, int j, byte abyte1[], int k)
+            throws DataLengthException
+        {
+            return cipher.processBytes(abyte0, i, j, abyte1, k);
+        }
+
+        public int doFinal(byte abyte0[], int i)
+            throws IllegalStateException, InvalidCipherTextException
+        {
+            return cipher.doFinal(abyte0, i);
+        }
+
+        private BufferedBlockCipher cipher;
+
+        BufferedGenericBlockCipher(BufferedBlockCipher bufferedblockcipher)
+        {
+            cipher = bufferedblockcipher;
+        }
+
+        BufferedGenericBlockCipher(BlockCipher blockcipher)
+        {
+            cipher = new PaddedBufferedBlockCipher(blockcipher);
+        }
+
+        BufferedGenericBlockCipher(BlockCipher blockcipher, BlockCipherPadding blockcipherpadding)
+        {
+            cipher = new PaddedBufferedBlockCipher(blockcipher, blockcipherpadding);
+        }
+    }
+
+    public static class CAST5 extends JCEBlockCipher
+    {
+
+        public CAST5()
+        {
+            super(new CAST5Engine());
+        }
+    }
+
+    public static class CAST5CBC extends JCEBlockCipher
+    {
+
+        public CAST5CBC()
+        {
+            super(new CBCBlockCipher(new CAST5Engine()), 64);
+        }
+    }
+
+    public static class CAST6 extends JCEBlockCipher
+    {
+
+        public CAST6()
+        {
+            super(new CAST6Engine());
+        }
+    }
+
+    public static class DES extends JCEBlockCipher
+    {
+
+        public DES()
+        {
+            super(new DESEngine());
+        }
+    }
+
+    public static class DESCBC extends JCEBlockCipher
+    {
+
+        public DESCBC()
+        {
+            super(new CBCBlockCipher(new DESEngine()), 64);
+        }
+    }
+
+    public static class DESede extends JCEBlockCipher
+    {
+
+        public DESede()
+        {
+            super(new DESedeEngine());
+        }
+    }
+
+    public static class DESedeCBC extends JCEBlockCipher
+    {
+
+        public DESedeCBC()
+        {
+            super(new CBCBlockCipher(new DESedeEngine()), 64);
+        }
+    }
+
+    public static class GOST28147 extends JCEBlockCipher
+    {
+
+        public GOST28147()
+        {
+            super(new GOST28147Engine());
+        }
+    }
+
+    public static class GOST28147cbc extends JCEBlockCipher
+    {
+
+        public GOST28147cbc()
+        {
+            super(new CBCBlockCipher(new GOST28147Engine()), 64);
+        }
+    }
+
+    private static interface GenericBlockCipher
+    {
+
+        public abstract void init(boolean flag, CipherParameters cipherparameters)
+            throws IllegalArgumentException;
+
+        public abstract boolean wrapOnNoPadding();
+
+        public abstract String getAlgorithmName();
+
+        public abstract BlockCipher getUnderlyingCipher();
+
+        public abstract int getOutputSize(int i);
+
+        public abstract int getUpdateOutputSize(int i);
+
+        public abstract int processByte(byte byte0, byte abyte0[], int i)
+            throws DataLengthException;
+
+        public abstract int processBytes(byte abyte0[], int i, int j, byte abyte1[], int k)
+            throws DataLengthException;
+
+        public abstract int doFinal(byte abyte0[], int i)
+            throws IllegalStateException, InvalidCipherTextException;
+    }
+
+    public static class PBEWithAESCBC extends JCEBlockCipher
+    {
+
+        public PBEWithAESCBC()
+        {
+            super(new CBCBlockCipher(new AESFastEngine()));
+        }
+    }
+
+    public static class PBEWithMD5AndDES extends JCEBlockCipher
+    {
+
+        public PBEWithMD5AndDES()
+        {
+            super(new CBCBlockCipher(new DESEngine()));
+        }
+    }
+
+    public static class PBEWithMD5AndRC2 extends JCEBlockCipher
+    {
+
+        public PBEWithMD5AndRC2()
+        {
+            super(new CBCBlockCipher(new RC2Engine()));
+        }
+    }
+
+    public static class PBEWithSHA1AndDES extends JCEBlockCipher
+    {
+
+        public PBEWithSHA1AndDES()
+        {
+            super(new CBCBlockCipher(new DESEngine()));
+        }
+    }
+
+    public static class PBEWithSHA1AndRC2 extends JCEBlockCipher
+    {
+
+        public PBEWithSHA1AndRC2()
+        {
+            super(new CBCBlockCipher(new RC2Engine()));
+        }
+    }
+
+    public static class PBEWithSHAAnd128BitRC2 extends JCEBlockCipher
+    {
+
+        public PBEWithSHAAnd128BitRC2()
+        {
+            super(new CBCBlockCipher(new RC2Engine()));
+        }
+    }
+
+    public static class PBEWithSHAAnd40BitRC2 extends JCEBlockCipher
+    {
+
+        public PBEWithSHAAnd40BitRC2()
+        {
+            super(new CBCBlockCipher(new RC2Engine()));
+        }
+    }
+
+    public static class PBEWithSHAAndDES2Key extends JCEBlockCipher
+    {
+
+        public PBEWithSHAAndDES2Key()
+        {
+            super(new CBCBlockCipher(new DESedeEngine()));
+        }
+    }
+
+    public static class PBEWithSHAAndDES3Key extends JCEBlockCipher
+    {
+
+        public PBEWithSHAAndDES3Key()
+        {
+            super(new CBCBlockCipher(new DESedeEngine()));
+        }
+    }
+
+    public static class PBEWithSHAAndTwofish extends JCEBlockCipher
+    {
+
+        public PBEWithSHAAndTwofish()
+        {
+            super(new CBCBlockCipher(new TwofishEngine()));
+        }
+    }
+
+    public static class RC2 extends JCEBlockCipher
+    {
+
+        public RC2()
+        {
+            super(new RC2Engine());
+        }
+    }
+
+    public static class RC2CBC extends JCEBlockCipher
+    {
+
+        public RC2CBC()
+        {
+            super(new CBCBlockCipher(new RC2Engine()), 64);
+        }
+    }
+
+    public static class RC5 extends JCEBlockCipher
+    {
+
+        public RC5()
+        {
+            super(new RC532Engine());
+        }
+    }
+
+    public static class RC564 extends JCEBlockCipher
+    {
+
+        public RC564()
+        {
+            super(new RC564Engine());
+        }
+    }
+
+    public static class RC6 extends JCEBlockCipher
+    {
+
+        public RC6()
+        {
+            super(new RC6Engine());
+        }
+    }
+
+    public static class Rijndael extends JCEBlockCipher
+    {
+
+        public Rijndael()
+        {
+            super(new RijndaelEngine());
+        }
+    }
+
+    public static class SEED extends JCEBlockCipher
+    {
+
+        public SEED()
+        {
+            super(new SEEDEngine());
+        }
+    }
+
+    public static class Serpent extends JCEBlockCipher
+    {
+
+        public Serpent()
+        {
+            super(new SerpentEngine());
+        }
+    }
+
+    public static class Skipjack extends JCEBlockCipher
+    {
+
+        public Skipjack()
+        {
+            super(new SkipjackEngine());
+        }
+    }
+
+    public static class TEA extends JCEBlockCipher
+    {
+
+        public TEA()
+        {
+            super(new TEAEngine());
+        }
+    }
+
+    public static class Twofish extends JCEBlockCipher
+    {
+
+        public Twofish()
+        {
+            super(new TwofishEngine());
+        }
+    }
+
+    public static class XTEA extends JCEBlockCipher
+    {
+
+        public XTEA()
+        {
+            super(new XTEAEngine());
+        }
+    }
+
+
+    protected JCEBlockCipher(BlockCipher blockcipher)
+    {
+        ivLength = 0;
+        pbeSpec = null;
+        pbeAlgorithm = null;
+        modeName = null;
+        baseEngine = blockcipher;
+        cipher = new BufferedGenericBlockCipher(blockcipher);
+    }
+
+    protected JCEBlockCipher(BlockCipher blockcipher, int i)
+    {
+        ivLength = 0;
+        pbeSpec = null;
+        pbeAlgorithm = null;
+        modeName = null;
+        baseEngine = blockcipher;
+        cipher = new BufferedGenericBlockCipher(blockcipher);
+        ivLength = i / 8;
+    }
+
+    protected JCEBlockCipher(BufferedBlockCipher bufferedblockcipher, int i)
+    {
+        ivLength = 0;
+        pbeSpec = null;
+        pbeAlgorithm = null;
+        modeName = null;
+        baseEngine = bufferedblockcipher.getUnderlyingCipher();
+        cipher = new BufferedGenericBlockCipher(bufferedblockcipher);
+        ivLength = i / 8;
+    }
+
+    protected int engineGetBlockSize()
+    {
+        return baseEngine.getBlockSize();
+    }
+
+    protected byte[] engineGetIV()
+    {
+        return ivParam == null ? null : ivParam.getIV();
+    }
+
+    protected int engineGetKeySize(Key key)
+    {
+        return key.getEncoded().length * 8;
+    }
+
+    protected int engineGetOutputSize(int i)
+    {
+        return cipher.getOutputSize(i);
+    }
+
+    protected AlgorithmParameters engineGetParameters()
+    {
+        if(engineParams == null)
+            if(pbeSpec != null)
+                try
+                {
+                    engineParams = AlgorithmParameters.getInstance(pbeAlgorithm, "BC");
+                    engineParams.init(pbeSpec);
+                }
+                catch(Exception exception)
+                {
+                    return null;
+                }
+            else
+            if(ivParam != null)
+            {
+                String s = cipher.getUnderlyingCipher().getAlgorithmName();
+                if(s.indexOf('/') >= 0)
+                    s = s.substring(0, s.indexOf('/'));
+                try
+                {
+                    engineParams = AlgorithmParameters.getInstance(s, "BC");
+                    engineParams.init(ivParam.getIV());
+                }
+                catch(Exception exception1)
+                {
+                    throw new RuntimeException(exception1.toString());
+                }
+            }
+        return engineParams;
+    }
+
+    protected void engineSetMode(String s)
+        throws NoSuchAlgorithmException
+    {
+        modeName = Strings.toUpperCase(s);
+        if(modeName.equals("ECB"))
+        {
+            ivLength = 0;
+            cipher = new BufferedGenericBlockCipher(baseEngine);
+        } else
+        if(modeName.equals("CBC"))
+        {
+            ivLength = baseEngine.getBlockSize();
+            cipher = new BufferedGenericBlockCipher(new CBCBlockCipher(baseEngine));
+        } else
+        if(modeName.startsWith("OFB"))
+        {
+            ivLength = baseEngine.getBlockSize();
+            if(modeName.length() != 3)
+            {
+                int i = Integer.parseInt(modeName.substring(3));
+                cipher = new BufferedGenericBlockCipher(new OFBBlockCipher(baseEngine, i));
+            } else
+            {
+                cipher = new BufferedGenericBlockCipher(new OFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
+            }
+        } else
+        if(modeName.startsWith("CFB"))
+        {
+            ivLength = baseEngine.getBlockSize();
+            if(modeName.length() != 3)
+            {
+                int j = Integer.parseInt(modeName.substring(3));
+                cipher = new BufferedGenericBlockCipher(new CFBBlockCipher(baseEngine, j));
+            } else
+            {
+                cipher = new BufferedGenericBlockCipher(new CFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
+            }
+        } else
+        if(modeName.startsWith("PGP"))
+        {
+            boolean flag = modeName.equalsIgnoreCase("PGPCFBwithIV");
+            ivLength = baseEngine.getBlockSize();
+            cipher = new BufferedGenericBlockCipher(new PGPCFBBlockCipher(baseEngine, flag));
+        } else
+        if(modeName.equalsIgnoreCase("OpenPGPCFB"))
+        {
+            ivLength = 0;
+            cipher = new BufferedGenericBlockCipher(new OpenPGPCFBBlockCipher(baseEngine));
+        } else
+        if(modeName.startsWith("SIC"))
+        {
+            ivLength = baseEngine.getBlockSize();
+            if(ivLength < 16)
+                throw new IllegalArgumentException("Warning: SIC-Mode can become a twotime-pad if the blocksize of the cipher is too small. Use a cipher with a block size of at least 128 bits (e.g. AES)");
+            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(new SICBlockCipher(baseEngine)));
+        } else
+        if(modeName.startsWith("CTR"))
+        {
+            ivLength = baseEngine.getBlockSize();
+            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(new SICBlockCipher(baseEngine)));
+        } else
+        if(modeName.startsWith("GOFB"))
+        {
+            ivLength = baseEngine.getBlockSize();
+            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(new GOFBBlockCipher(baseEngine)));
+        } else
+        if(modeName.startsWith("CTS"))
+        {
+            ivLength = baseEngine.getBlockSize();
+            cipher = new BufferedGenericBlockCipher(new CTSBlockCipher(new CBCBlockCipher(baseEngine)));
+        } else
+        if(modeName.startsWith("CCM"))
+        {
+            ivLength = baseEngine.getBlockSize();
+            cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
+        } else
+        if(modeName.startsWith("EAX"))
+        {
+            ivLength = baseEngine.getBlockSize();
+            cipher = new AEADGenericBlockCipher(new EAXBlockCipher(baseEngine));
+        } else
+        if(modeName.startsWith("GCM"))
+        {
+            ivLength = baseEngine.getBlockSize();
+            cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
+        } else
+        {
+            throw new NoSuchAlgorithmException((new StringBuilder()).append("can't support mode ").append(s).toString());
+        }
+    }
+
+    protected void engineSetPadding(String s)
+        throws NoSuchPaddingException
+    {
+        String s1 = Strings.toUpperCase(s);
+        if(s1.equals("NOPADDING"))
+        {
+            if(cipher.wrapOnNoPadding())
+                cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(cipher.getUnderlyingCipher()));
+        } else
+        if(s1.equals("WITHCTS"))
+        {
+            cipher = new BufferedGenericBlockCipher(new CTSBlockCipher(cipher.getUnderlyingCipher()));
+        } else
+        {
+            padded = true;
+            if(isAEADModeName(modeName))
+                throw new NoSuchPaddingException("Only NoPadding can be used with AEAD modes.");
+            if(s1.equals("PKCS5PADDING") || s1.equals("PKCS7PADDING"))
+                cipher = new BufferedGenericBlockCipher(cipher.getUnderlyingCipher());
+            else
+            if(s1.equals("ZEROBYTEPADDING"))
+                cipher = new BufferedGenericBlockCipher(cipher.getUnderlyingCipher(), new ZeroBytePadding());
+            else
+            if(s1.equals("ISO10126PADDING") || s1.equals("ISO10126-2PADDING"))
+                cipher = new BufferedGenericBlockCipher(cipher.getUnderlyingCipher(), new ISO10126d2Padding());
+            else
+            if(s1.equals("X9.23PADDING") || s1.equals("X923PADDING"))
+                cipher = new BufferedGenericBlockCipher(cipher.getUnderlyingCipher(), new X923Padding());
+            else
+            if(s1.equals("ISO7816-4PADDING") || s1.equals("ISO9797-1PADDING"))
+                cipher = new BufferedGenericBlockCipher(cipher.getUnderlyingCipher(), new ISO7816d4Padding());
+            else
+            if(s1.equals("TBCPADDING"))
+                cipher = new BufferedGenericBlockCipher(cipher.getUnderlyingCipher(), new TBCPadding());
+            else
+                throw new NoSuchPaddingException((new StringBuilder()).append("Padding ").append(s).append(" unknown.").toString());
+        }
+    }
+
+    protected void engineInit(int i, Key key, AlgorithmParameterSpec algorithmparameterspec, SecureRandom securerandom)
+        throws InvalidKeyException, InvalidAlgorithmParameterException
+    {
+        pbeSpec = null;
+        pbeAlgorithm = null;
+        engineParams = null;
+        if(!(key instanceof SecretKey))
+            throw new InvalidKeyException((new StringBuilder()).append("Key for algorithm ").append(key.getAlgorithm()).append(" not suitable for symmetric enryption.").toString());
+        if(algorithmparameterspec == null && baseEngine.getAlgorithmName().startsWith("RC5-64"))
+            throw new InvalidAlgorithmParameterException("RC5 requires an RC5ParametersSpec to be passed in.");
+        Object obj;
+        if(key instanceof JCEPBEKey)
+        {
+            JCEPBEKey jcepbekey = (JCEPBEKey)key;
+            if(jcepbekey.getOID() != null)
+                pbeAlgorithm = jcepbekey.getOID().getId();
+            else
+                pbeAlgorithm = jcepbekey.getAlgorithm();
+            if(jcepbekey.getParam() != null)
+            {
+                obj = jcepbekey.getParam();
+                pbeSpec = new PBEParameterSpec(jcepbekey.getSalt(), jcepbekey.getIterationCount());
+            } else
+            if(algorithmparameterspec instanceof PBEParameterSpec)
+            {
+                pbeSpec = (PBEParameterSpec)algorithmparameterspec;
+                obj = PBE.Util.makePBEParameters(jcepbekey, algorithmparameterspec, cipher.getUnderlyingCipher().getAlgorithmName());
+            } else
+            {
+                throw new InvalidAlgorithmParameterException("PBE requires PBE parameters to be set.");
+            }
+            if(obj instanceof ParametersWithIV)
+                ivParam = (ParametersWithIV)obj;
+        } else
+        if(algorithmparameterspec == null)
+            obj = new KeyParameter(key.getEncoded());
+        else
+        if(algorithmparameterspec instanceof IvParameterSpec)
+        {
+            if(ivLength != 0)
+            {
+                IvParameterSpec ivparameterspec = (IvParameterSpec)algorithmparameterspec;
+                if(ivparameterspec.getIV().length != ivLength && !isAEADModeName(modeName))
+                    throw new InvalidAlgorithmParameterException((new StringBuilder()).append("IV must be ").append(ivLength).append(" bytes long.").toString());
+                obj = new ParametersWithIV(new KeyParameter(key.getEncoded()), ivparameterspec.getIV());
+                ivParam = (ParametersWithIV)obj;
+            } else
+            {
+                if(modeName != null && modeName.equals("ECB"))
+                    throw new InvalidAlgorithmParameterException("ECB mode does not use an IV");
+                obj = new KeyParameter(key.getEncoded());
+            }
+        } else
+        if(algorithmparameterspec instanceof GOST28147ParameterSpec)
+        {
+            GOST28147ParameterSpec gost28147parameterspec = (GOST28147ParameterSpec)algorithmparameterspec;
+            obj = new ParametersWithSBox(new KeyParameter(key.getEncoded()), ((GOST28147ParameterSpec)algorithmparameterspec).getSbox());
+            if(gost28147parameterspec.getIV() != null && ivLength != 0)
+            {
+                obj = new ParametersWithIV(((CipherParameters) (obj)), gost28147parameterspec.getIV());
+                ivParam = (ParametersWithIV)obj;
+            }
+        } else
+        if(algorithmparameterspec instanceof RC2ParameterSpec)
+        {
+            RC2ParameterSpec rc2parameterspec = (RC2ParameterSpec)algorithmparameterspec;
+            obj = new RC2Parameters(key.getEncoded(), ((RC2ParameterSpec)algorithmparameterspec).getEffectiveKeyBits());
+            if(rc2parameterspec.getIV() != null && ivLength != 0)
+            {
+                obj = new ParametersWithIV(((CipherParameters) (obj)), rc2parameterspec.getIV());
+                ivParam = (ParametersWithIV)obj;
+            }
+        } else
+        if(algorithmparameterspec instanceof RC5ParameterSpec)
+        {
+            RC5ParameterSpec rc5parameterspec = (RC5ParameterSpec)algorithmparameterspec;
+            obj = new RC5Parameters(key.getEncoded(), ((RC5ParameterSpec)algorithmparameterspec).getRounds());
+            if(baseEngine.getAlgorithmName().startsWith("RC5"))
+            {
+                if(baseEngine.getAlgorithmName().equals("RC5-32"))
+                {
+                    if(rc5parameterspec.getWordSize() != 32)
+                        throw new InvalidAlgorithmParameterException((new StringBuilder()).append("RC5 already set up for a word size of 32 not ").append(rc5parameterspec.getWordSize()).append(".").toString());
+                } else
+                if(baseEngine.getAlgorithmName().equals("RC5-64") && rc5parameterspec.getWordSize() != 64)
+                    throw new InvalidAlgorithmParameterException((new StringBuilder()).append("RC5 already set up for a word size of 64 not ").append(rc5parameterspec.getWordSize()).append(".").toString());
+            } else
+            {
+                throw new InvalidAlgorithmParameterException("RC5 parameters passed to a cipher that is not RC5.");
+            }
+            if(rc5parameterspec.getIV() != null && ivLength != 0)
+            {
+                obj = new ParametersWithIV(((CipherParameters) (obj)), rc5parameterspec.getIV());
+                ivParam = (ParametersWithIV)obj;
+            }
+        } else
+        {
+            throw new InvalidAlgorithmParameterException("unknown parameter type.");
+        }
+        if(ivLength != 0 && !(obj instanceof ParametersWithIV))
+        {
+            SecureRandom securerandom1 = securerandom;
+            if(securerandom1 == null)
+                securerandom1 = new SecureRandom();
+            if(i == 1 || i == 3)
+            {
+                byte abyte0[] = new byte[ivLength];
+                securerandom1.nextBytes(abyte0);
+                obj = new ParametersWithIV(((CipherParameters) (obj)), abyte0);
+                ivParam = (ParametersWithIV)obj;
+            } else
+            if(cipher.getUnderlyingCipher().getAlgorithmName().indexOf("PGPCFB") < 0)
+                throw new InvalidAlgorithmParameterException("no IV set when one expected");
+        }
+        if(securerandom != null && padded)
+            obj = new ParametersWithRandom(((CipherParameters) (obj)), securerandom);
+        try
+        {
+            switch(i)
+            {
+            case 1: // '\001'
+            case 3: // '\003'
+                cipher.init(true, ((CipherParameters) (obj)));
+                break;
+
+            case 2: // '\002'
+            case 4: // '\004'
+                cipher.init(false, ((CipherParameters) (obj)));
+                break;
+
+            default:
+                throw new InvalidParameterException((new StringBuilder()).append("unknown opmode ").append(i).append(" passed").toString());
+            }
+        }
+        catch(Exception exception)
+        {
+            throw new InvalidKeyException(exception.getMessage());
+        }
+    }
+
+    protected void engineInit(int i, Key key, AlgorithmParameters algorithmparameters, SecureRandom securerandom)
+        throws InvalidKeyException, InvalidAlgorithmParameterException
+    {
+        AlgorithmParameterSpec algorithmparameterspec = null;
+        if(algorithmparameters != null)
+        {
+            int j = 0;
+            do
+            {
+                if(j == availableSpecs.length)
+                    break;
+                try
+                {
+                    algorithmparameterspec = algorithmparameters.getParameterSpec(availableSpecs[j]);
+                    break;
+                }
+                catch(Exception exception)
+                {
+                    j++;
+                }
+            } while(true);
+            if(algorithmparameterspec == null)
+                throw new InvalidAlgorithmParameterException((new StringBuilder()).append("can't handle parameter ").append(algorithmparameters.toString()).toString());
+        }
+        engineInit(i, key, algorithmparameterspec, securerandom);
+        engineParams = algorithmparameters;
+    }
+
+    protected void engineInit(int i, Key key, SecureRandom securerandom)
+        throws InvalidKeyException
+    {
+        try
+        {
+            engineInit(i, key, (AlgorithmParameterSpec)null, securerandom);
+        }
+        catch(InvalidAlgorithmParameterException invalidalgorithmparameterexception)
+        {
+            throw new InvalidKeyException(invalidalgorithmparameterexception.getMessage());
+        }
+    }
+
+    protected byte[] engineUpdate(byte abyte0[], int i, int j)
+    {
+        int k = cipher.getUpdateOutputSize(j);
+        if(k > 0)
+        {
+            byte abyte1[] = new byte[k];
+            int l = cipher.processBytes(abyte0, i, j, abyte1, 0);
+            if(l == 0)
+                return null;
+            if(l != abyte1.length)
+            {
+                byte abyte2[] = new byte[l];
+                System.arraycopy(abyte1, 0, abyte2, 0, l);
+                return abyte2;
+            } else
+            {
+                return abyte1;
+            }
+        } else
+        {
+            cipher.processBytes(abyte0, i, j, null, 0);
+            return null;
+        }
+    }
+
+    protected int engineUpdate(byte abyte0[], int i, int j, byte abyte1[], int k)
+        throws ShortBufferException
+    {
+        return cipher.processBytes(abyte0, i, j, abyte1, k);
+        DataLengthException datalengthexception;
+        datalengthexception;
+        throw new ShortBufferException(datalengthexception.getMessage());
+    }
+
+    protected byte[] engineDoFinal(byte abyte0[], int i, int j)
+        throws IllegalBlockSizeException, BadPaddingException
+    {
+        int k = 0;
+        byte abyte1[] = new byte[engineGetOutputSize(j)];
+        if(j != 0)
+            k = cipher.processBytes(abyte0, i, j, abyte1, 0);
+        try
+        {
+            k += cipher.doFinal(abyte1, k);
+        }
+        catch(DataLengthException datalengthexception)
+        {
+            throw new IllegalBlockSizeException(datalengthexception.getMessage());
+        }
+        catch(InvalidCipherTextException invalidciphertextexception)
+        {
+            throw new BadPaddingException(invalidciphertextexception.getMessage());
+        }
+        if(k == abyte1.length)
+        {
+            return abyte1;
+        } else
+        {
+            byte abyte2[] = new byte[k];
+            System.arraycopy(abyte1, 0, abyte2, 0, k);
+            return abyte2;
+        }
+    }
+
+    protected int engineDoFinal(byte abyte0[], int i, int j, byte abyte1[], int k)
+        throws IllegalBlockSizeException, BadPaddingException
+    {
+        int l;
+        l = 0;
+        if(j != 0)
+            l = cipher.processBytes(abyte0, i, j, abyte1, k);
+        return l + cipher.doFinal(abyte1, k + l);
+        Object obj;
+        obj;
+        throw new IllegalBlockSizeException(((DataLengthException) (obj)).getMessage());
+        obj;
+        throw new BadPaddingException(((InvalidCipherTextException) (obj)).getMessage());
+    }
+
+    private boolean isAEADModeName(String s)
+    {
+        return "CCM".equals(s) || "EAX".equals(s) || "GCM".equals(s);
+    }
+
+    private Class availableSpecs[] = {
+        javax/crypto/spec/RC2ParameterSpec, javax/crypto/spec/RC5ParameterSpec, javax/crypto/spec/IvParameterSpec, javax/crypto/spec/PBEParameterSpec, org/bouncycastle/jce/spec/GOST28147ParameterSpec
+    };
+    private BlockCipher baseEngine;
+    private GenericBlockCipher cipher;
+    private ParametersWithIV ivParam;
+    private int ivLength;
+    private boolean padded;
+    private PBEParameterSpec pbeSpec;
+    private String pbeAlgorithm;
+    private String modeName;
+}

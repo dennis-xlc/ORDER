@@ -1,0 +1,4 @@
+Warning: Phase tag.tlo is not a standard Soot phase listed in XML files.
+Soot started on Wed Sep 28 06:33:42 CST 2011
+/home/dennis/tool/copy_harmony/working_classlib/depends/jars/bcprov-jdk15-144/bcprov/org/bouncycastle/crypto/examples/RSAExample.java:127:
+  Semantic Error: can not instantiate org.bouncycastle.crypto.modes.CBCBlockCipher no matching constructor found in org.bouncycastle.crypto.modes.CBCBlockCipher

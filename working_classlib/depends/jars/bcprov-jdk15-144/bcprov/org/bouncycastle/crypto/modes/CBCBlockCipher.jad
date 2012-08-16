@@ -1,0 +1,108 @@
+// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
+// Jad home page: http://www.geocities.com/kpdus/jad.html
+// Decompiler options: packimports(3) 
+
+package org.bouncycastle.crypto.modes;
+
+import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
+
+public class CBCBlockCipher
+    implements BlockCipher
+{
+
+    public CBCBlockCipher(BlockCipher blockcipher)
+    {
+        cipher = null;
+        cipher = blockcipher;
+        blockSize = blockcipher.getBlockSize();
+        IV = new byte[blockSize];
+        cbcV = new byte[blockSize];
+        cbcNextV = new byte[blockSize];
+    }
+
+    public BlockCipher getUnderlyingCipher()
+    {
+        return cipher;
+    }
+
+    public void init(boolean flag, CipherParameters cipherparameters)
+        throws IllegalArgumentException
+    {
+        encrypting = flag;
+        if(cipherparameters instanceof ParametersWithIV)
+        {
+            ParametersWithIV parameterswithiv = (ParametersWithIV)cipherparameters;
+            byte abyte0[] = parameterswithiv.getIV();
+            if(abyte0.length != blockSize)
+                throw new IllegalArgumentException("initialisation vector must be the same length as block size");
+            System.arraycopy(abyte0, 0, IV, 0, abyte0.length);
+            reset();
+            cipher.init(flag, parameterswithiv.getParameters());
+        } else
+        {
+            reset();
+            cipher.init(flag, cipherparameters);
+        }
+    }
+
+    public String getAlgorithmName()
+    {
+        return (new StringBuilder()).append(cipher.getAlgorithmName()).append("/CBC").toString();
+    }
+
+    public int getBlockSize()
+    {
+        return cipher.getBlockSize();
+    }
+
+    public int processBlock(byte abyte0[], int i, byte abyte1[], int j)
+        throws DataLengthException, IllegalStateException
+    {
+        return encrypting ? encryptBlock(abyte0, i, abyte1, j) : decryptBlock(abyte0, i, abyte1, j);
+    }
+
+    public void reset()
+    {
+        System.arraycopy(IV, 0, cbcV, 0, IV.length);
+        Arrays.fill(cbcNextV, (byte)0);
+        cipher.reset();
+    }
+
+    private int encryptBlock(byte abyte0[], int i, byte abyte1[], int j)
+        throws DataLengthException, IllegalStateException
+    {
+        if(i + blockSize > abyte0.length)
+            throw new DataLengthException("input buffer too short");
+        for(int k = 0; k < blockSize; k++)
+            cbcV[k] ^= abyte0[i + k];
+
+        int l = cipher.processBlock(cbcV, 0, abyte1, j);
+        System.arraycopy(abyte1, j, cbcV, 0, cbcV.length);
+        return l;
+    }
+
+    private int decryptBlock(byte abyte0[], int i, byte abyte1[], int j)
+        throws DataLengthException, IllegalStateException
+    {
+        if(i + blockSize > abyte0.length)
+            throw new DataLengthException("input buffer too short");
+        System.arraycopy(abyte0, i, cbcNextV, 0, blockSize);
+        int k = cipher.processBlock(abyte0, i, abyte1, j);
+        for(int l = 0; l < blockSize; l++)
+            abyte1[j + l] ^= cbcV[l];
+
+        byte abyte2[] = cbcV;
+        cbcV = cbcNextV;
+        cbcNextV = abyte2;
+        return k;
+    }
+
+    private byte IV[];
+    private byte cbcV[];
+    private byte cbcNextV[];
+    private int blockSize;
+    private BlockCipher cipher;
+    private boolean encrypting;
+}
